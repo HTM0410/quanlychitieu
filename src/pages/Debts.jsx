@@ -4,6 +4,7 @@ import { supabase } from '../supabase/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import useNumberFormat from '../hooks/useNumberFormat'
 
 // Các ID danh mục vay nợ
 const CATEGORY_IDS = {
@@ -29,11 +30,37 @@ const Debts = () => {
     status: 'chưa_trả'
   })
   
+  // Custom hooks cho việc định dạng số tiền
+  const [displayAmount, actualAmount, handleAmountChange] = useNumberFormat(newDebt.amount)
+  const [editDisplayAmount, editActualAmount, handleEditAmountChange] = useNumberFormat(
+    editingDebt ? editingDebt.amount : ''
+  )
+  
   useEffect(() => {
     if (user) {
       fetchDebts()
     }
   }, [user])
+  
+  // Cập nhật actualAmount vào newDebt
+  useEffect(() => {
+    setNewDebt(prev => ({...prev, amount: actualAmount}))
+  }, [actualAmount])
+  
+  // Cập nhật editActualAmount vào editingDebt
+  useEffect(() => {
+    if (editingDebt) {
+      setEditingDebt(prev => ({...prev, amount: editActualAmount}))
+    }
+  }, [editActualAmount])
+  
+  // Cập nhật displayAmount khi editingDebt thay đổi
+  useEffect(() => {
+    if (editingDebt) {
+      // Khởi tạo lại hook với giá trị mới
+      handleEditAmountChange({target: {value: editingDebt.amount.toString()}})
+    }
+  }, [editingDebt])
   
   // Format tiền tệ VND
   const formatCurrency = (amount) => {
@@ -387,10 +414,10 @@ const Debts = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={newDebt.amount}
-                  onChange={(e) => setNewDebt({...newDebt, amount: e.target.value})}
+                  value={displayAmount}
+                  onChange={handleAmountChange}
                   placeholder="Nhập số tiền"
                 />
               </div>
@@ -477,10 +504,10 @@ const Debts = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={editingDebt.amount}
-                  onChange={(e) => setEditingDebt({...editingDebt, amount: e.target.value})}
+                  value={editDisplayAmount}
+                  onChange={handleEditAmountChange}
                 />
               </div>
 

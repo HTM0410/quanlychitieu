@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/defaultCategories'
+import useNumberFormat from '../hooks/useNumberFormat'
 
 const Transactions = () => {
   const { user } = useAuth()
@@ -28,6 +29,32 @@ const Transactions = () => {
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: ''
   })
+
+  // Custom hooks cho việc định dạng số tiền
+  const [displayAmount, actualAmount, handleAmountChange] = useNumberFormat(newTransaction.amount)
+  const [editDisplayAmount, editActualAmount, handleEditAmountChange] = useNumberFormat(
+    editingTransaction ? editingTransaction.amount : ''
+  )
+  
+  // Cập nhật actualAmount vào newTransaction
+  useEffect(() => {
+    setNewTransaction(prev => ({...prev, amount: actualAmount}))
+  }, [actualAmount])
+  
+  // Cập nhật editActualAmount vào editingTransaction
+  useEffect(() => {
+    if (editingTransaction) {
+      setEditingTransaction(prev => ({...prev, amount: editActualAmount}))
+    }
+  }, [editActualAmount])
+  
+  // Cập nhật displayAmount khi editingTransaction thay đổi
+  useEffect(() => {
+    if (editingTransaction) {
+      // Khởi tạo lại hook với giá trị mới
+      handleEditAmountChange({target: {value: editingTransaction.amount.toString()}})
+    }
+  }, [editingTransaction])
 
   // Kết hợp danh mục mặc định và tùy chỉnh
   const allCategories = [
@@ -413,10 +440,10 @@ const Transactions = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={newTransaction.amount}
-                  onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                  value={displayAmount}
+                  onChange={handleAmountChange}
                   placeholder="Nhập số tiền"
                 />
               </div>
@@ -505,10 +532,10 @@ const Transactions = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={editingTransaction.amount}
-                  onChange={(e) => setEditingTransaction({...editingTransaction, amount: e.target.value})}
+                  value={editDisplayAmount}
+                  onChange={handleEditAmountChange}
                 />
               </div>
 
