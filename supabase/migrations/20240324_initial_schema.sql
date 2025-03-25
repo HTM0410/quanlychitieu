@@ -112,6 +112,11 @@ INSERT INTO categories (id, name, type, color) VALUES
   ('a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d', 'Thu nhập phụ', 'income', 'bg-green-500'),
   ('b8c9d0e1-f2a3-4b5c-6d7e-8f9a0b1c2d3e', 'Khác', 'income', 'bg-green-500');
 
+-- Thêm danh mục cho vay nợ
+INSERT INTO categories (id, name, type, color) VALUES
+  ('d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a', 'Trả nợ', 'expense', 'bg-red-500'),
+  ('e2f3a4b5-c6d7-8e9f-0a1b-2c3d4e5f6a7b', 'Thu nợ', 'income', 'bg-green-500');
+
 create table transactions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null,
@@ -151,12 +156,12 @@ create table debts (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null,
   title text not null,
-  amount decimal not null,
-  type text not null check (type in ('borrow', 'lend')),
+  amount decimal not null check (amount > 0),
+  type text not null check (type in ('vay', 'cho_vay')),
   person_name text not null,
-  description text,
-  due_date date,
-  status text not null check (status in ('pending', 'paid', 'overdue')) default 'pending',
+  notes text,
+  date date not null,
+  status text not null check (status in ('chưa_trả', 'đã_trả')) default 'chưa_trả',
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );
@@ -282,17 +287,50 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- Create function to update debt status
-create or replace function update_debt_status()
-returns trigger as $$
-begin
-  update debts
-  set status = 'overdue'
-  where status = 'pending'
-    and due_date < current_date;
-  return null;
-end;
-$$ language plpgsql security definer;
+-- Function để tự động tạo giao dịch khi cập nhật trạng thái vay nợ
+CREATE OR REPLACE FUNCTION update_debt_status()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Nếu trạng thái được cập nhật thành 'đã_trả'
+  IF NEW.status = 'đã_trả' AND OLD.status = 'chưa_trả' THEN
+    -- Tạo giao dịch tương ứng
+    INSERT INTO transactions (
+      user_id,
+      title,
+      amount,
+      type,
+      category_id,
+      date,
+      notes
+    ) VALUES (
+      NEW.user_id,
+      CASE 
+        WHEN NEW.type = 'vay' THEN 'Trả nợ: ' || NEW.title
+        ELSE 'Thu nợ: ' || NEW.title
+      END,
+      NEW.amount,
+      CASE 
+        WHEN NEW.type = 'vay' THEN 'expense'
+        ELSE 'income'
+      END,
+      CASE 
+        WHEN NEW.type = 'vay' THEN 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a'  -- ID của danh mục "Trả nợ"
+        ELSE 'e2f3a4b5-c6d7-8e9f-0a1b-2c3d4e5f6a7b'  -- ID của danh mục "Thu nợ"
+      END,
+      CURRENT_DATE,
+      'Tự động tạo từ khoản vay nợ: ' || NEW.title || ' - ' || NEW.person_name
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger để tự động tạo giao dịch khi cập nhật trạng thái vay nợ
+DROP TRIGGER IF EXISTS update_debt_status_trigger ON debts;
+CREATE TRIGGER update_debt_status_trigger
+  BEFORE UPDATE ON debts
+  FOR EACH ROW
+  EXECUTE FUNCTION update_debt_status();
 
 -- Create triggers
 create trigger on_auth_user_created
@@ -304,11 +342,6 @@ create trigger update_budget_spent_trigger
   for each row
   when (new.type = 'expense' or old.type = 'expense')
   execute function update_budget_spent();
-
-create trigger update_debt_status_trigger
-  after insert or update on debts
-  for each statement
-  execute function update_debt_status();
 
 -- Create policies for transactions
 create policy "Cho phép xem giao dịch của user" on transactions

@@ -6,7 +6,9 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { id: 'e5d4c3b2-a1b2-c3d4-e5f6-a7b8c9d0e1f2', name: 'Giải trí', type: 'expense', color: 'bg-red-500' },
   { id: 'f2e1d0c9-b8a7-6f5e-4d3c-2b1a0f9e8d7c', name: 'Sức khỏe', type: 'expense', color: 'bg-red-500' },
   { id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', name: 'Giáo dục', type: 'expense', color: 'bg-red-500' },
-  { id: 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', name: 'Khác', type: 'expense', color: 'bg-red-500' }
+  { id: 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', name: 'Khác', type: 'expense', color: 'bg-red-500' },
+  { id: 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a', name: 'Trả nợ', type: 'expense', color: 'bg-red-500' },
+  { id: '862b2956-2e4b-4732-b0cd-1bb1f8112afa', name: 'Cho vay', type: 'expense', color: 'bg-red-500' }
 ];
 
 export const DEFAULT_INCOME_CATEGORIES = [
@@ -15,5 +17,7 @@ export const DEFAULT_INCOME_CATEGORIES = [
   { id: 'e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b', name: 'Đầu tư', type: 'income', color: 'bg-green-500' },
   { id: 'f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c', name: 'Được tặng', type: 'income', color: 'bg-green-500' },
   { id: 'a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d', name: 'Thu nhập phụ', type: 'income', color: 'bg-green-500' },
-  { id: 'b8c9d0e1-f2a3-4b5c-6d7e-8f9a0b1c2d3e', name: 'Khác', type: 'income', color: 'bg-green-500' }
+  { id: 'b8c9d0e1-f2a3-4b5c-6d7e-8f9a0b1c2d3e', name: 'Khác', type: 'income', color: 'bg-green-500' },
+  { id: 'e2f3a4b5-c6d7-8e9f-0a1b-2c3d4e5f6a7b', name: 'Thu nợ', type: 'income', color: 'bg-green-500' },
+  { id: 'bc985284-54a1-4a6a-bb59-e6997eb6ac51', name: 'Vay', type: 'income', color: 'bg-green-500' }
 ]; 

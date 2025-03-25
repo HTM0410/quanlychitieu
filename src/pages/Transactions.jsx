@@ -235,7 +235,7 @@ const Transactions = () => {
   const handleExport = () => {
     // Xử lý xuất dữ liệu
   }
-
+  
   // Format tiền tệ VND
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -244,7 +244,7 @@ const Transactions = () => {
       maximumFractionDigits: 0,
     }).format(amount)
   }
-
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -275,16 +275,16 @@ const Transactions = () => {
             <FiDownload className="mr-2" />
             Xuất
           </button>
-          <button
-            onClick={() => setShowAddModal(true)}
+        <button 
+          onClick={() => setShowAddModal(true)}
             className="px-4 py-2 flex items-center gradient-bg text-white rounded-lg"
-          >
-            <FiPlus className="mr-2" />
-            Thêm giao dịch
-          </button>
-        </div>
+        >
+          <FiPlus className="mr-2" />
+          Thêm giao dịch
+        </button>
       </div>
-
+      </div>
+      
       {/* Danh sách giao dịch */}
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -325,13 +325,13 @@ const Transactions = () => {
                         className="text-primary-600 hover:text-primary-700"
                       >
                         <FiEdit2 className="text-sm" />
-                      </button>
-                      <button 
+                    </button>
+                    <button 
                         onClick={() => handleDeleteTransaction(transaction.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
+                      className="text-red-500 hover:text-red-700"
+                    >
                         <FiTrash2 className="text-sm" />
-                      </button>
+                    </button>
                     </div>
                   </td>
                 </tr>
@@ -340,7 +340,7 @@ const Transactions = () => {
           </table>
         </div>
       </div>
-
+      
       {/* Modal thêm giao dịch */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -358,7 +358,7 @@ const Transactions = () => {
                   placeholder="Nhập tiêu đề giao dịch"
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Loại giao dịch</label>
                 <div className="flex space-x-4">
@@ -409,7 +409,7 @@ const Transactions = () => {
                   }
                 </select>
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền</label>
                 <input 
@@ -420,7 +420,7 @@ const Transactions = () => {
                   placeholder="Nhập số tiền"
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ngày</label>
                 <input 
@@ -430,7 +430,7 @@ const Transactions = () => {
                   onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
                 <textarea 

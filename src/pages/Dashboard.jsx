@@ -87,7 +87,7 @@ const Dashboard = () => {
         setIncome(totalIncome)
         setExpenses(totalExpense)
         setTotalBalance(totalIncome - totalExpense)
-        setSavings(Math.max(0, totalIncome * 0.2)) // Giả sử tiết kiệm 20% thu nhập
+        setSavings(0)
       }
 
       // Lấy giao dịch gần đây
