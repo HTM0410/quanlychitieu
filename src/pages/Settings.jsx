@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { FiUser, FiLock, FiDollarSign, FiBell, FiGlobe, FiSave, FiPlus, FiEdit2, FiTrash2, FiList } from 'react-icons/fi'
 import { supabase } from '../supabase/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/defaultCategories'
 
 const Settings = () => {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(false)
-  const [categories, setCategories] = useState([])
+  const [customCategories, setCustomCategories] = useState([])
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [newCategory, setNewCategory] = useState({
@@ -32,13 +33,20 @@ const Settings = () => {
     tips: false
   })
   
+  // Kết hợp danh mục mặc định và tùy chỉnh
+  const allCategories = [
+    ...DEFAULT_EXPENSE_CATEGORIES,
+    ...DEFAULT_INCOME_CATEGORIES,
+    ...customCategories
+  ]
+  
   useEffect(() => {
     if (user) {
-      fetchCategories()
+      fetchCustomCategories()
     }
   }, [user])
 
-  const fetchCategories = async () => {
+  const fetchCustomCategories = async () => {
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -49,7 +57,7 @@ const Settings = () => {
         .order('name')
 
       if (error) throw error
-      setCategories(data || [])
+      setCustomCategories(data || [])
     } catch (error) {
       console.error('Lỗi khi lấy danh mục:', error)
     } finally {
@@ -76,7 +84,7 @@ const Settings = () => {
 
       if (error) throw error
 
-      setCategories([...categories, data[0]])
+      setCustomCategories([...customCategories, data[0]])
       setShowAddCategoryModal(false)
       setNewCategory({
         name: '',
@@ -108,7 +116,7 @@ const Settings = () => {
 
       if (error) throw error
 
-      setCategories(categories.map(c => 
+      setCustomCategories(customCategories.map(c => 
         c.id === editingCategory.id ? data[0] : c
       ))
       setEditingCategory(null)
@@ -128,49 +136,11 @@ const Settings = () => {
 
         if (error) throw error
 
-        setCategories(categories.filter(c => c.id !== id))
+        setCustomCategories(customCategories.filter(c => c.id !== id))
       } catch (error) {
         console.error('Lỗi khi xóa danh mục:', error)
         alert('Có lỗi xảy ra khi xóa danh mục!')
       }
-    }
-  }
-
-  const handleCreateDefaultCategories = async () => {
-    try {
-      const defaultCategories = [
-        // Chi tiêu
-        { name: 'Ăn uống', type: 'expense', color: 'bg-red-500' },
-        { name: 'Di chuyển', type: 'expense', color: 'bg-blue-500' },
-        { name: 'Mua sắm', type: 'expense', color: 'bg-purple-500' },
-        { name: 'Hóa đơn & Tiện ích', type: 'expense', color: 'bg-yellow-500' },
-        { name: 'Giải trí', type: 'expense', color: 'bg-green-500' },
-        { name: 'Sức khỏe', type: 'expense', color: 'bg-pink-500' },
-        { name: 'Giáo dục', type: 'expense', color: 'bg-indigo-500' },
-        { name: 'Khác', type: 'expense', color: 'bg-gray-500' },
-        // Thu nhập
-        { name: 'Lương', type: 'income', color: 'bg-emerald-500' },
-        { name: 'Thưởng', type: 'income', color: 'bg-amber-500' },
-        { name: 'Đầu tư', type: 'income', color: 'bg-cyan-500' },
-        { name: 'Được tặng', type: 'income', color: 'bg-lime-500' },
-        { name: 'Thu nhập phụ', type: 'income', color: 'bg-orange-500' },
-        { name: 'Khác', type: 'income', color: 'bg-slate-500' }
-      ]
-
-      const { error } = await supabase
-        .from('categories')
-        .insert(defaultCategories.map(cat => ({
-          ...cat,
-          user_id: user.id
-        })))
-
-      if (error) throw error
-
-      fetchCategories()
-      alert('Đã tạo danh mục mặc định thành công!')
-    } catch (error) {
-      console.error('Lỗi khi tạo danh mục mặc định:', error)
-      alert('Có lỗi xảy ra khi tạo danh mục mặc định!')
     }
   }
 
@@ -586,21 +556,13 @@ const Settings = () => {
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Quản lý danh mục</h2>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleCreateDefaultCategories}
-                    className="px-4 py-2 border border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50"
-                  >
-                    Tạo danh mục mặc định
-                  </button>
-                  <button 
-                    onClick={() => setShowAddCategoryModal(true)}
-                    className="flex items-center px-4 py-2 gradient-bg text-white rounded-lg"
-                  >
-                    <FiPlus className="mr-2" />
-                    Thêm danh mục
-                  </button>
-                </div>
+                <button 
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="flex items-center px-4 py-2 gradient-bg text-white rounded-lg"
+                >
+                  <FiPlus className="mr-2" />
+                  Thêm danh mục
+                </button>
               </div>
 
               {loading ? (
@@ -613,7 +575,7 @@ const Settings = () => {
                   <div>
                     <h3 className="font-medium mb-4">Chi tiêu</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {categories
+                      {allCategories
                         .filter(cat => cat.type === 'expense')
                         .map(category => (
                           <div key={category.id} className="bg-white/30 p-4 rounded-xl flex items-center justify-between">
@@ -621,20 +583,22 @@ const Settings = () => {
                               <div className={`w-4 h-4 rounded-full ${category.color} mr-3`}></div>
                               <span>{category.name}</span>
                             </div>
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => setEditingCategory(category)}
-                                className="p-1.5 hover:bg-white/20 rounded-lg"
-                              >
-                                <FiEdit2 className="text-primary-600" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteCategory(category.id)}
-                                className="p-1.5 hover:bg-white/20 rounded-lg"
-                              >
-                                <FiTrash2 className="text-red-500" />
-                              </button>
-                            </div>
+                            {customCategories.find(c => c.id === category.id) && (
+                              <div className="flex space-x-2">
+                                <button 
+                                  onClick={() => setEditingCategory(category)}
+                                  className="p-1.5 hover:bg-white/20 rounded-lg"
+                                >
+                                  <FiEdit2 className="text-primary-600" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteCategory(category.id)}
+                                  className="p-1.5 hover:bg-white/20 rounded-lg"
+                                >
+                                  <FiTrash2 className="text-red-500" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                     </div>
@@ -643,7 +607,7 @@ const Settings = () => {
                   <div>
                     <h3 className="font-medium mb-4">Thu nhập</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {categories
+                      {allCategories
                         .filter(cat => cat.type === 'income')
                         .map(category => (
                           <div key={category.id} className="bg-white/30 p-4 rounded-xl flex items-center justify-between">
@@ -651,20 +615,22 @@ const Settings = () => {
                               <div className={`w-4 h-4 rounded-full ${category.color} mr-3`}></div>
                               <span>{category.name}</span>
                             </div>
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => setEditingCategory(category)}
-                                className="p-1.5 hover:bg-white/20 rounded-lg"
-                              >
-                                <FiEdit2 className="text-primary-600" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteCategory(category.id)}
-                                className="p-1.5 hover:bg-white/20 rounded-lg"
-                              >
-                                <FiTrash2 className="text-red-500" />
-                              </button>
-                            </div>
+                            {customCategories.find(c => c.id === category.id) && (
+                              <div className="flex space-x-2">
+                                <button 
+                                  onClick={() => setEditingCategory(category)}
+                                  className="p-1.5 hover:bg-white/20 rounded-lg"
+                                >
+                                  <FiEdit2 className="text-primary-600" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteCategory(category.id)}
+                                  className="p-1.5 hover:bg-white/20 rounded-lg"
+                                >
+                                  <FiTrash2 className="text-red-500" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                     </div>
