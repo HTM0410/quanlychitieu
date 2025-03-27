@@ -19,7 +19,7 @@ const Sidebar = ({ isOpen }) => {
             <span className="text-white font-bold text-xl">Q</span>
           </div>
           {isOpen && (
-            <h1 className="ml-3 text-xl font-bold gradient-text">QuanLyChi</h1>
+            <h1 className="ml-3 text-xl font-bold gradient-text">QuanLyChiTieu</h1>
           )}
         </div>
       </div>

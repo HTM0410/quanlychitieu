@@ -249,12 +249,31 @@ returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  profile_exists boolean;
 begin
-  insert into profiles (id, email)
-  values (new.id, new.email);
+  -- Kiểm tra xem profile đã tồn tại chưa
+  select exists(
+    select 1 from profiles where id = new.id
+  ) into profile_exists;
 
+  -- Chỉ tạo profile nếu chưa tồn tại
+  if not profile_exists then
+    insert into profiles (id, email, full_name)
+    values (
+      new.id,
+      new.email,
+      coalesce(
+        (new.raw_user_meta_data ->> 'full_name')::text,
+        split_part(new.email, '@', 1)
+      )
+    );
+  end if;
+
+  -- Tạo user preferences nếu chưa có
   insert into user_preferences (user_id)
-  values (new.id);
+  values (new.id)
+  on conflict (user_id) do nothing;
 
   return new;
 end;

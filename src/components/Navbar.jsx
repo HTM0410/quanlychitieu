@@ -1,10 +1,35 @@
-import { useState } from 'react'
-import { FiMenu, FiBell, FiUser, FiSearch, FiLogOut } from 'react-icons/fi'
+import { useState, useEffect } from 'react'
+import { FiMenu, FiBell, FiUser, FiSearch, FiLogOut, FiSettings } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 const Navbar = ({ toggleSidebar }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [profile, setProfile] = useState(null)
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile()
+    }
+  }, [user])
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setProfile(data)
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin profile:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     try {
@@ -12,6 +37,16 @@ const Navbar = ({ toggleSidebar }) => {
     } catch (error) {
       console.error('Lỗi đăng xuất:', error.message)
     }
+  }
+  
+  const handleProfileClick = () => {
+    navigate('/settings?tab=profile')
+    setShowProfileMenu(false)
+  }
+  
+  const handleAccountSettingsClick = () => {
+    navigate('/settings?tab=security')
+    setShowProfileMenu(false)
   }
 
   return (
@@ -49,24 +84,36 @@ const Navbar = ({ toggleSidebar }) => {
             className="flex items-center space-x-2 p-1 rounded-full hover:bg-white/20 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-medium">
-              {user?.email?.[0].toUpperCase() || 'U'}
+              {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
             </div>
             <span className="hidden md:block text-gray-800 font-medium">
-              {user?.email?.split('@')[0] || 'User'}
+              {profile?.full_name || 'User'}
             </span>
           </button>
           
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-48 glass-card p-2 shadow-lg">
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl p-2 shadow-lg">
               <ul>
-                <li className="px-3 py-2 hover:bg-white/30 rounded-lg cursor-pointer">Hồ sơ cá nhân</li>
-                <li className="px-3 py-2 hover:bg-white/30 rounded-lg cursor-pointer">Cài đặt tài khoản</li>
                 <li 
-                  className="px-3 py-2 hover:bg-white/30 rounded-lg cursor-pointer text-red-500 flex items-center"
+                  className="px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer flex items-center"
+                  onClick={handleProfileClick}
+                >
+                  <FiUser className="mr-2 text-primary-600" />
+                  <span className="whitespace-nowrap">Hồ sơ cá nhân</span>
+                </li>
+                <li 
+                  className="px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer flex items-center"
+                  onClick={handleAccountSettingsClick}
+                >
+                  <FiSettings className="mr-2 text-primary-600" />
+                  <span className="whitespace-nowrap">Cài đặt tài khoản</span>
+                </li>
+                <li 
+                  className="px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer text-red-500 flex items-center"
                   onClick={handleSignOut}
                 >
                   <FiLogOut className="mr-2" />
-                  Đăng xuất
+                  <span className="whitespace-nowrap">Đăng xuất</span>
                 </li>
               </ul>
             </div>

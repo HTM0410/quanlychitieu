@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { FiUser, FiLock, FiDollarSign, FiBell, FiGlobe, FiSave, FiPlus, FiEdit2, FiTrash2, FiList } from 'react-icons/fi'
-import { supabase } from '../supabase/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/defaultCategories'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const Settings = () => {
   const { user } = useAuth()
@@ -11,15 +12,19 @@ const Settings = () => {
   const [customCategories, setCustomCategories] = useState([])
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  
   const [newCategory, setNewCategory] = useState({
     name: '',
     type: 'expense',
     color: 'bg-blue-500'
   })
   const [profile, setProfile] = useState({
-    fullName: 'Trương Minh Hoàng',
-    email: 'nguyenthanh@gmail.com',
-    phone: '0912345678',
+    fullName: '',
+    email: '',
+    phone: '',
+    birth_date: '',
     avatar: ''
   })
   
@@ -33,6 +38,21 @@ const Settings = () => {
     tips: false
   })
   
+  // Đọc tab từ query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['profile', 'security', 'preferences', 'notifications', 'categories'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+  
+  // Cập nhật URL khi tab thay đổi
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    navigate(`/settings?tab=${tab}`, { replace: true });
+  };
+  
   // Kết hợp danh mục mặc định và tùy chỉnh
   const allCategories = [
     ...DEFAULT_EXPENSE_CATEGORIES,
@@ -43,6 +63,7 @@ const Settings = () => {
   useEffect(() => {
     if (user) {
       fetchCustomCategories()
+      fetchProfile()
     }
   }, [user])
 
@@ -62,6 +83,28 @@ const Settings = () => {
       console.error('Lỗi khi lấy danh mục:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+
+      setProfile({
+        fullName: data.full_name || '',
+        email: data.email || user.email,
+        phone: data.phone || '',
+        birth_date: data.birth_date || '',
+        avatar: data.avatar_url || ''
+      })
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin profile:', error)
     }
   }
 
@@ -160,10 +203,28 @@ const Settings = () => {
     })
   }
   
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault()
-    // Xử lý lưu thông tin hồ sơ
-    alert('Đã lưu thông tin hồ sơ thành công!')
+    try {
+      setLoading(true)
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.fullName,
+          phone: profile.phone,
+          birth_date: profile.birth_date || null
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+      alert('Đã lưu thông tin hồ sơ thành công!')
+      window.location.reload()
+    } catch (error) {
+      console.error('Lỗi khi cập nhật profile:', error.message)
+      alert('Có lỗi xảy ra khi lưu thông tin: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
   }
   
   const handleSavePreferences = (e) => {
@@ -199,7 +260,7 @@ const Settings = () => {
                     ? 'bg-white/30 text-primary-700 font-medium' 
                     : 'hover:bg-white/20 text-gray-700'
                 }`}
-                onClick={() => setActiveTab('profile')}
+                onClick={() => handleTabChange('profile')}
               >
                 <FiUser className="mr-3" />
                 Hồ sơ cá nhân
@@ -212,7 +273,7 @@ const Settings = () => {
                     ? 'bg-white/30 text-primary-700 font-medium' 
                     : 'hover:bg-white/20 text-gray-700'
                 }`}
-                onClick={() => setActiveTab('security')}
+                onClick={() => handleTabChange('security')}
               >
                 <FiLock className="mr-3" />
                 Bảo mật
@@ -225,7 +286,7 @@ const Settings = () => {
                     ? 'bg-white/30 text-primary-700 font-medium' 
                     : 'hover:bg-white/20 text-gray-700'
                 }`}
-                onClick={() => setActiveTab('preferences')}
+                onClick={() => handleTabChange('preferences')}
               >
                 <FiDollarSign className="mr-3" />
                 Tùy chọn
@@ -238,7 +299,7 @@ const Settings = () => {
                     ? 'bg-white/30 text-primary-700 font-medium' 
                     : 'hover:bg-white/20 text-gray-700'
                 }`}
-                onClick={() => setActiveTab('notifications')}
+                onClick={() => handleTabChange('notifications')}
               >
                 <FiBell className="mr-3" />
                 Thông báo
@@ -251,7 +312,7 @@ const Settings = () => {
                     ? 'bg-white/30 text-primary-700 font-medium' 
                     : 'hover:bg-white/20 text-gray-700'
                 }`}
-                onClick={() => setActiveTab('categories')}
+                onClick={() => handleTabChange('categories')}
               >
                 <FiList className="mr-3" />
                 Danh mục
@@ -298,9 +359,9 @@ const Settings = () => {
                     <input 
                       type="email" 
                       name="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-100"
                       value={profile.email}
-                      onChange={handleProfileChange}
+                      disabled
                     />
                   </div>
                   
@@ -312,6 +373,18 @@ const Settings = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       value={profile.phone}
                       onChange={handleProfileChange}
+                      placeholder="Nhập số điện thoại"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+                    <input 
+                      type="date" 
+                      name="birth_date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      value={profile.birth_date}
+                      onChange={handleProfileChange}
                     />
                   </div>
                 </div>
@@ -320,9 +393,19 @@ const Settings = () => {
                   <button 
                     type="submit"
                     className="flex items-center px-4 py-2 gradient-bg text-white rounded-lg"
+                    disabled={loading}
                   >
-                    <FiSave className="mr-2" />
-                    Lưu thay đổi
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        <FiSave className="mr-2" />
+                        Lưu thay đổi
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

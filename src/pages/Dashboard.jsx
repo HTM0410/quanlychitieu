@@ -13,6 +13,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const Dashboard = () => {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(null)
   const [totalBalance, setTotalBalance] = useState(0)
   const [income, setIncome] = useState(0)
   const [expenses, setExpenses] = useState(0)
@@ -27,8 +28,24 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchDashboardData()
+      fetchProfile()
     }
   }, [user])
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setProfile(data)
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin profile:', error)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -186,7 +203,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Xin chào, {user?.email?.split('@')[0] || 'User'}!</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Xin chào, {profile?.full_name || 'User'}!</h1>
       
       {/* Thẻ tổng quan */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

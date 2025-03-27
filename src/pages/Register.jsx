@@ -26,34 +26,32 @@ const Register = () => {
     setLoading(true)
 
     try {
-      const { error } = await signUp(email, password)
+      const { data, error } = await signUp(email, password, {
+        data: {
+          full_name: fullName
+        }
+      })
       if (error) throw error
 
-      // Tạo profile cho user mới
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: (await supabase.auth.getUser()).data.user.id,
+      // Kiểm tra xem đăng ký có thành công không
+      if (data?.user) {
+        // Thêm thông tin vào bảng profiles
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
             full_name: fullName,
-            email: email,
-          }
-        ])
+            email: email
+          })
 
-      if (profileError) throw profileError
+        if (profileError) throw profileError
 
-      // Tạo user preferences mặc định
-      const { error: preferencesError } = await supabase
-        .from('user_preferences')
-        .insert([
-          {
-            user_id: (await supabase.auth.getUser()).data.user.id,
-          }
-        ])
-
-      if (preferencesError) throw preferencesError
-
-      navigate('/')
+        // Đăng ký thành công, chuyển hướng đến trang đăng nhập
+        navigate('/')
+      } else {
+        // Nếu cần xác thực email
+        setError('Vui lòng kiểm tra email của bạn để xác thực tài khoản')
+      }
     } catch (error) {
       setError(error.message)
     } finally {
